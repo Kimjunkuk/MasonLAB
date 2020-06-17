@@ -1,0 +1,149 @@
+virtual env
+$ sudo apt install python3-pip
+
+$ sudo apt install python3-venv
+
+$ python3 -m venv Flask_Blog/venv ** Create Virtual environment
+
+$ cd Flask_Blog/
+
+~/Flask_Blog$ source venv/bin/activate  **(deactivate)
+
+(venv) ~/Flask_Blog$ pip install -r requirements.txt
+
+python
+>>> import os
+>>> os.environ.get('SECRET_KEY')
+>>> os.environ.get('SQLALCHEMY_DATABASE_URI')
+>>> os.environ.get('EMAIL_USER')
+'CoreyMSchafer@gmail.com'
+>>> os.environ.get('EMAIL_PASS')
+
+(venv) ~/Flask_Blog$ sudo touch /etc/config.json
+
+(venv) ~/Flask_Blog$ sudo nano /etc/config.jason
+
+{
+	"SECRET_KEY": "5791628bb0b13ce0c676dfde280ba245",
+	"SQLALCHEMY_DATABASE_URI": "sqlite:///site.db",
+	"EMAIL_USER": "ehehwnwjs5052@gmail.com",
+	"EMAIL_PASS": "toicbslezzlcqrci"
+}
+
+(venv) ~/Flask_Blog$ sudo nano flaskblog/config.py
+
+import os
+import json
+
+with open('/etc/config.json') as config_file:
+    config = json.load(config_file)
+
+class Config:
+    SECRET_KEY =  config.get('SECRET_KEY')
+    SQLALCHEMY_DATABASE_URI = config.get('SQLALCHEMY_DATABASE_URI')
+    MAIL_SERVER = 'smtp.googlemail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = config.get('EMAIL_USER')
+    MAIL_PASSWORD = config.get('EMAIL_PASS')
+
+(venv) ~/Flask_Blog$ cat run.py
+
+(venv) ~/Flask_Blog$ export FLASK_APP=run.py
+
+(venv) ~/Flask_Blog$ flask run --host=0.0.0.0
+
+(venv) ~/Flask_Blog$ sudo apt install nginx
+
+(venv) ~/Flask_Blog$ pip install gunicorn
+
+(venv) $ sudo rm /etc/nginx/sites-enabled/default
+
+(venv) $ sudo nano /etc/nginx/sites-enabled/flaskblog
+
+server{
+       listen 80;
+       server_name 3.219.251.247;
+
+       location /static {
+               alias /home/ubuntu/Flask_Blog/flaskblog/static;
+       }
+
+       location / {
+               proxy_pass http://localhost:8000;
+               include /etc/nginx/proxy_params;
+               proxy_redirect off;
+       }
+
+}
+
+** listen : port;
+** sernver_name IP address;
+** location /static <- (CSS, JS, Pictures)'s loacation
+** proxy_pass <- gunicorn use port 8000
+
+(venv) $ sudo ufw allow http/tcp
+
+(venv) $ sudo ufw delete allow 5000
+
+(venv) $ sudo ufw enable
+
+Command may disrupt existing ssh connection. Proceed with operation (y|n)? y
+...
+
+(venv) $ sudo systemctl restart nginx
+
+(venv) $ nproc --all
+1
+(venv) $ cd Flask_Blog/
+
+(venv) ~/Flask_Blog$ cat run.py
+
+(venv) ~/Flask_Blog$ gunicorn -w 3 run:app
+
+(venv) ~/Flask_Blog$ sudo apt install supervisor
+
+(venv) ~/Flask_Blog$ sudo nano /etc/supervisor/conf.d/flaskblog.conf
+
+[program:flaskblog]
+directory=/home/ubuntu/Flask_Blog
+command=/home/ubuntu/Flask_Blog/venv/bin/gunicorn -w 3 run:app
+user=ubuntu
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stderr_logfile=/var/log/flaskblog/flaskblog.err.log
+stdout_logfile=/var/log/flaskblog/flaskblog.out.log
+
+
+(venv) ~/Flask_Blog$ sudo mkdir -p /var/log/flaskblog
+
+(venv) ~/Flask_Blog$ sudo touch /var/log/flaskblog/flaskblog.err.log
+
+(venv) ~/Flask_Blog$ sudo touch /var/log/flaskblog/flaskblog.out.log
+
+(venv) ~/Flask_Blog$ sudo supervisorctl reload
+
+(venv) ~/Flask_Blog$ sudo nano /etc/nginx/nginx.conf
+
+....
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        client_max_body_size 5M; <- can fix this size
+        # server_tokens off;
+
+        # server_names_hash_bucket_size 64;
+        # server_name_in_redirect off;
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        ##
+        # SSL Settings
+....
+
+(venv) ~/Flask_Blog$ sudo systemctl restart nginx
